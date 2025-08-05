@@ -1,0 +1,50 @@
+{{>partial_header}}
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Xunit;
+using Microsoft.Extensions.DependencyInjection;
+{{#hasImport}}
+using {{packageName}}.{{modelPackage}};{{/hasImport}}
+using {{packageName}}.Interfaces;
+
+{{>testInstructions}}
+
+
+namespace {{packageName}}.Test.Interfaces
+{
+    /// <summary>
+    ///  Class for testing {{baseName}}
+    /// </summary>
+    public sealed class {{baseName}}Tests : ApiTestsBase
+    {
+        private readonly {{interfacePrefix}}{{baseName}} _instance;
+
+        public {{baseName}}Tests(): base(Array.Empty<string>())
+        {
+            _instance = _host.Services.GetRequiredService<{{interfacePrefix}}{{baseName}}>();
+        }
+        {{#operations}}
+        {{#operation}}
+
+        /// <summary>
+        /// Test {{#vendorExtensions.x-csharp-operationId}}{{vendorExtensions.x-csharp-operationId}}{{/vendorExtensions.x-csharp-operationId}}{{^vendorExtensions.x-csharp-operationId}}{{operationId}}{{/vendorExtensions.x-csharp-operationId}}
+        /// </summary>
+        [Fact (Skip = "not implemented")]
+        public async Task {{#vendorExtensions.x-csharp-operationId}}{{vendorExtensions.x-csharp-operationId}}{{/vendorExtensions.x-csharp-operationId}}{{^vendorExtensions.x-csharp-operationId}}{{operationId}}{{/vendorExtensions.x-csharp-operationId}}AsyncTest()
+        {
+            {{#allParams}}
+            {{{dataType}}}{{>NullConditionalParameter}} {{paramName}} = default{{nrt!}};
+            {{/allParams}}
+            {{#returnType}}
+            var response = await _instance.{{#vendorExtensions.x-csharp-operationId}}{{vendorExtensions.x-csharp-operationId}}{{/vendorExtensions.x-csharp-operationId}}{{^vendorExtensions.x-csharp-operationId}}{{operationId}}{{/vendorExtensions.x-csharp-operationId}}Async({{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}});
+            Assert.IsType<{{{.}}}>(response);
+            {{/returnType}}
+            {{^returnType}}
+            await _instance.{{#vendorExtensions.x-csharp-operationId}}{{vendorExtensions.x-csharp-operationId}}{{/vendorExtensions.x-csharp-operationId}}{{^vendorExtensions.x-csharp-operationId}}{{operationId}}{{/vendorExtensions.x-csharp-operationId}}Async({{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}});
+            {{/returnType}}
+        }
+        {{/operation}}
+        {{/operations}}
+    }
+}

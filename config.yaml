@@ -1,0 +1,9 @@
+templateDir: ./Scripts/OpenApiGenerator/my_custom_templates
+modelPackage: Models
+apiPackage: Interfaces
+prependFormOrBodyParameters: true
+targetFramework: net8.0
+nullableReferenceTypes: true
+library: generichost
+validatable: false
+optionalEmitDefaultValues: true
