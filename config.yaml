@@ -1,4 +1,4 @@
-templateDir: ./Scripts/OpenApiGenerator/my_custom_templates
+templateDir: ./my_custom_templates
 modelPackage: Models
 apiPackage: Interfaces
 prependFormOrBodyParameters: true
