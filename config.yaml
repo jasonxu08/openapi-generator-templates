@@ -1,4 +1,4 @@
-templateDir: ./my_custom_templates
+templateDir: ./openapi-templates/my_custom_templates
 modelPackage: Models
 apiPackage: Interfaces
 prependFormOrBodyParameters: true
@@ -7,3 +7,4 @@ nullableReferenceTypes: true
 library: generichost
 validatable: false
 optionalEmitDefaultValues: true
+
