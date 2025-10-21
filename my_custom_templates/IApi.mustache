@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using {{packageName}}.{{clientPackage}};
 using {{packageName}}.{{apiPackage}};
 
@@ -23,10 +24,10 @@ namespace {{packageName}}.{{apiPackage}}
     /// </summary>
     public partial interface {{interfacePrefix}}{{clientName}}
     {
-		JsonSerializerOptions JsonSerializerOptions { get; }
+		JsonSerializerOptionsProvider JsonSerializerOptionsProvider { get; }
 
 {{#apiInfo.apis}}
-        {{interfacePrefix}}{{baseName}} {{baseName}} { get; }
+        {{interfacePrefix}}{{classname}} {{classname}} { get; }
 {{/apiInfo.apis}}
 
     }
@@ -37,30 +38,32 @@ namespace {{packageName}}
     public class {{clientName}} : {{interfacePrefix}}{{clientName}}
     {
         public HttpClient HttpClient { get; }
-		public JsonSerializerOptions JsonSerializerOptions { get; private set; }
+		public JsonSerializerOptionsProvider JsonSerializerOptionsProvider { get; private set; }
 {{#apiInfo.apis}}
-        {{>visibility}} virtual {{interfacePrefix}}{{baseName}} {{baseName}} { get; private set; }
+        {{>visibility}} virtual {{interfacePrefix}}{{classname}} {{classname}} { get; private set; }
 {{/apiInfo.apis}}
 
         public {{clientName}}(
-            HttpClient httpClient, JsonSerializerOptions? jsonSerializerOptions = null) 
+            HttpClient httpClient, JsonSerializerOptionsProvider? jsonSerializerOptionsProvider = null) 
         {
             HttpClient = httpClient;
-            if (jsonSerializerOptions != null)
+            if (jsonSerializerOptionsProvider != null)
             {
-                JsonSerializerOptions = jsonSerializerOptions;
+                JsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
             }
             else
             {
-                JsonSerializerOptions = new JsonSerializerOptions();
-                JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                JsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
-                JsonSerializerOptions.Converters.Add(new DateTimeNullableJsonConverter());
-                JsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
-                JsonSerializerOptions.Converters.Add(new DateOnlyNullableJsonConverter());
+                var jsonSerializerOptions = new JsonSerializerOptions();
+                jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
+                jsonSerializerOptions.Converters.Add(new DateTimeNullableJsonConverter());
+                jsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
+                jsonSerializerOptions.Converters.Add(new DateOnlyNullableJsonConverter());
+            	JsonSerializerOptionsProvider = new JsonSerializerOptionsProvider(jsonSerializerOptions);
             }
+            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
 {{#apiInfo.apis}}
-            {{baseName}} = new {{baseName}}(httpClient, JsonSerializerOptions);
+            {{classname}} = new {{classname}}(loggerFactory.CreateLogger<{{classname}}>(), loggerFactory, httpClient, JsonSerializerOptionsProvider, new {{classname}}Events());
 {{/apiInfo.apis}}
         }
 

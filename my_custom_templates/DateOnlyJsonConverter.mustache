@@ -33,6 +33,7 @@ namespace {{packageName}}.{{clientPackage}}
             string value = reader.GetString(){{nrt!}};
 
             foreach(string format in Formats)
+                // DNV customization: DateOnly is irrelevant to time zone.
                 if (DateOnly.TryParseExact(value, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly result))
                     return result;
 
