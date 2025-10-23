@@ -44,7 +44,7 @@ namespace {{packageName}}
 {{/apiInfo.apis}}
 
         public {{clientName}}(
-            HttpClient httpClient, JsonSerializerOptionsProvider? jsonSerializerOptionsProvider = null) 
+            HttpClient httpClient, bool dummy = true, JsonSerializerOptionsProvider? jsonSerializerOptionsProvider = null) 
         {
             HttpClient = httpClient;
             if (jsonSerializerOptionsProvider != null)
