@@ -482,7 +482,7 @@ namespace {{packageName}}
 
                     {{/-first}}
                     {{/required}}
-                    //Veracity: non-required parameters are of type Option
+                    // DNV customization: non-required parameters are of type Option
                     {{#isArray}}
                     foreach (var item in {{paramName}}{{^required}}.Value{{/required}})
                     {
@@ -948,7 +948,7 @@ namespace {{packageName}}
             {{/returnProperty.mostInnerItems.isEnumRef}}{{/returnTypeIsPrimitive}}{{/returnType}}
             return new HttpOperationResponse{{#returnType}}<{{{returnType}}}>{{/returnType}}
             {
-                {{#returnType}}Body = JsonSerializer.Deserialize<{{{returnType}}}>(apiResponse.RawContent, jsonSerializerOptions),{{/returnType}}
+                {{#returnType}}Body = JsonSerializer.Deserialize<{{{returnType}}}>(apiResponse.RawContent, _jsonSerializerOptions),{{/returnType}}
                 Request = apiResponse.Request,
                 Response = apiResponse.Response
             };
