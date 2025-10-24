@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using {{packageName}}.{{clientPackage}};
 using {{packageName}}.{{apiPackage}};
+using {{packageName}}.{{modelPackage}};
 
 namespace {{packageName}}.{{apiPackage}}
 {
@@ -57,8 +58,21 @@ namespace {{packageName}}
                 jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                 jsonSerializerOptions.Converters.Add(new DateTimeJsonConverter());
                 jsonSerializerOptions.Converters.Add(new DateTimeNullableJsonConverter());
+                {{#supportsDateOnly}}
                 jsonSerializerOptions.Converters.Add(new DateOnlyJsonConverter());
                 jsonSerializerOptions.Converters.Add(new DateOnlyNullableJsonConverter());
+                {{/supportsDateOnly}}
+                {{#models}}
+                {{#model}}
+                {{#isEnum}}
+                jsonSerializerOptions.Converters.Add(new {{datatypeWithEnum}}{{^datatypeWithEnum}}{{classname}}{{/datatypeWithEnum}}JsonConverter());
+                jsonSerializerOptions.Converters.Add(new {{datatypeWithEnum}}{{^datatypeWithEnum}}{{classname}}{{/datatypeWithEnum}}NullableJsonConverter());
+                {{/isEnum}}
+                {{^isEnum}}
+                jsonSerializerOptions.Converters.Add(new {{classname}}JsonConverter());
+                {{/isEnum}}
+                {{/model}}
+                {{/models}}
             	JsonSerializerOptionsProvider = new JsonSerializerOptionsProvider(jsonSerializerOptions);
             }
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
