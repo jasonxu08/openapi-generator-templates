@@ -168,7 +168,7 @@ namespace {{packageName}}.{{clientPackage}}
         bool Try{{.}}({{#net60OrLater}}[NotNullWhen(true)]{{/net60OrLater}}out TType{{nrt?}} result);
     }
     {{/x-http-statuses-with-return}}
-    
+    /*
     {{>visibility}} interface IHttpOperationResponse
     {
         HttpRequestMessage Request { get; set; }
@@ -216,5 +216,5 @@ namespace {{packageName}}.{{clientPackage}}
     {{>visibility}} class HttpOperationResponse<T> : HttpOperationResponse, IHttpOperationResponse<T>, IHttpOperationResponse
     {
         {{>visibility}} T Body { get; set; }
-    }
+    }*/
 }
