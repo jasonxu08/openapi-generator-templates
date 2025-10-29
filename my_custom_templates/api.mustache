@@ -48,7 +48,6 @@ namespace {{packageName}}.{{package}}
         /// </summary>
         {{classname}}Events Events { get; }
 
-
         {{#operation}}
         /// <summary>
         /// {{summary}}
@@ -66,7 +65,7 @@ namespace {{packageName}}.{{package}}
         {{#isDeprecated}}
         [Obsolete]
         {{/isDeprecated}}
-        Task<{{interfacePrefix}}{{operationId}}ApiResponse> {{operationId}}InternalAsync({{>OperationSignature}}, Dictionary<string, IList<string>>? customHeaders = null);
+        Task<{{interfacePrefix}}{{operationId}}ApiResponse> {{operationId}}NativeAsync({{>OperationSignature}}, Dictionary<string, IList<string>>? customHeaders = null);
 
         /// <summary>
         /// {{summary}}
@@ -396,7 +395,7 @@ namespace {{packageName}}
         {
             try
             {
-                return await {{operationId}}InternalAsync({{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}}{{#allParams.0}}, {{/allParams.0}}cancellationToken).ConfigureAwait(false);
+                return await {{operationId}}NativeAsync({{#allParams}}{{paramName}}{{^-last}}, {{/-last}}{{/allParams}}{{#allParams.0}}, {{/allParams.0}}cancellationToken).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -414,7 +413,7 @@ namespace {{packageName}}
         /// <param name="cancellationToken">Cancellation Token to cancel the request.</param>
         /// <param name="customHeaders">The headers that will be added to request.</param>
         /// <returns><see cref="Task"/>&lt;<see cref="{{interfacePrefix}}{{operationId}}ApiResponse"/>&gt;</returns>
-        public async Task<{{interfacePrefix}}{{operationId}}ApiResponse> {{operationId}}InternalAsync({{>OperationSignature}}, Dictionary<string, IList<string>>? customHeaders = null)
+        public async Task<{{interfacePrefix}}{{operationId}}ApiResponse> {{operationId}}NativeAsync({{>OperationSignature}}, Dictionary<string, IList<string>>? customHeaders = null)
         {
             {{#lambda.trimLineBreaks}}
             UriBuilder uriBuilderLocalVar = new UriBuilder();
@@ -501,6 +500,7 @@ namespace {{packageName}}
                     }                    
                     {{/isArray}}
                     {{/queryParams}}
+
                     {{#constantParams}}
                     {{#isQueryParam}}
                     // Set client side default value of Query Param "{{baseName}}".
@@ -944,7 +944,7 @@ namespace {{packageName}}
             Dictionary<string, IList<string>>? customHeaders = null)
         {
             // Call the WithHttpMessagesAsync method
-            var apiResponse = await {{operationId}}InternalAsync(
+            var apiResponse = await {{operationId}}NativeAsync(
                 {{#allParams}}
                 {{paramName}},
                 {{/allParams}}
@@ -952,11 +952,6 @@ namespace {{packageName}}
                 customHeaders
             ).ConfigureAwait(false);
 
-            JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions(_jsonSerializerOptions);
-            {{#returnType}}{{^returnTypeIsPrimitive}}{{^returnProperty.mostInnerItems.isEnumRef}}
-            {{returnBaseType}}.ClassInit = true;
-            jsonSerializerOptions.TypeInfoResolver = GlobalContext.ContextMapper[typeof({{{returnType}}})];
-            {{/returnProperty.mostInnerItems.isEnumRef}}{{/returnTypeIsPrimitive}}{{/returnType}}
             return new HttpOperationResponse{{#returnType}}<{{{returnType}}}>{{/returnType}}
             {
                 {{#returnType}}Body = JsonSerializer.Deserialize<{{{returnType}}}>(apiResponse.RawContent, _jsonSerializerOptions),{{/returnType}}
