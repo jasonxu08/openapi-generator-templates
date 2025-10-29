@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using {{packageName}}.{{clientPackage}};
 using {{packageName}}.{{apiPackage}};
@@ -73,7 +74,8 @@ namespace {{packageName}}
                 {{/isEnum}}
                 {{/model}}
                 {{/models}}
-            	JsonSerializerOptionsProvider = new JsonSerializerOptionsProvider(jsonSerializerOptions);
+                jsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
+                JsonSerializerOptionsProvider = new JsonSerializerOptionsProvider(jsonSerializerOptions);
             }
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
 {{#apiInfo.apis}}

@@ -58,8 +58,7 @@ namespace {{packageName}}.{{clientPackage}}
             _jsonOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
             JsonSerializerOptionsProvider jsonSerializerOptionsProvider = new{{^net60OrLater}} JsonSerializerOptionsProvider{{/net60OrLater}}(_jsonOptions);
             _services.AddSingleton(jsonSerializerOptionsProvider);
-            _services.AddSingleton(jsonSerializerOptionsProvider.Options);
-           {{#useSourceGeneration}}
+            {{#useSourceGeneration}}
 
             {{#models}}
             {{#-first}}

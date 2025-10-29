@@ -5,7 +5,6 @@
 
 {{/nrt}}
 using System;
-using System.Net.Http;
 
 namespace {{packageName}}.{{clientPackage}}
 {
@@ -44,17 +43,4 @@ namespace {{packageName}}.{{clientPackage}}
             RawContent = rawContent;
         }
     }
-/*
-    {{>visibility}} class HttpOperationException : Exception
-    {
-        {{>visibility}} HttpRequestMessage Request { get; }
-        {{>visibility}} HttpResponseMessage Response { get; }
-
-        {{>visibility}} HttpOperationException(HttpRequestMessage request, HttpResponseMessage response, string message)
-            : base(message)
-        {
-            Request = request;
-            Response = response;
-        }
-    }*/
 }
