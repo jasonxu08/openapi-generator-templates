@@ -28,11 +28,11 @@ namespace {{packageName}}.{{clientPackage}}
         /// <param name="value"></param>
         public Option(TType value)
         {
-            if (value != null)
-            {
+	    if (value != null)
+	    {
                 IsSet = true;
                 Value = value;
-            }
+	    }
         }
 
         /// <summary>
