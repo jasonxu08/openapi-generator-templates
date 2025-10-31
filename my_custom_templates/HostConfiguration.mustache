@@ -55,6 +55,7 @@ namespace {{packageName}}.{{clientPackage}}
             {{/isEnum}}
             {{/model}}
             {{/models}}
+            // DNV customization: Use default resolver to support AOT
             _jsonOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
             JsonSerializerOptionsProvider jsonSerializerOptionsProvider = new{{^net60OrLater}} JsonSerializerOptionsProvider{{/net60OrLater}}(_jsonOptions);
             _services.AddSingleton(jsonSerializerOptionsProvider);
@@ -84,6 +85,7 @@ namespace {{packageName}}.{{clientPackage}}
             _services.AddSingleton<IApiFactory, ApiFactory>();{{#apiInfo}}{{#apis}}
             _services.AddSingleton<{{classname}}Events>();
             _services.AddTransient<{{interfacePrefix}}{{classname}}, {{classname}}>();{{/apis}}{{/apiInfo}}
+            // DNV customization: Inject client name.
 	    _services.AddTransient<{{interfacePrefix}}{{clientName}}, {{clientName}}>();
         }
 

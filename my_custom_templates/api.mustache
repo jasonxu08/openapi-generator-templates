@@ -32,6 +32,7 @@ using {{packageName}}.{{modelPackage}};
 using System.Diagnostics.CodeAnalysis;
 {{/netStandard}}
 using {{packageName}}.{{package}};
+// DNV customization: Todo: Microsoft.Rest will be removed
 using Microsoft.Rest;
 
 namespace {{packageName}}.{{package}}
@@ -82,7 +83,7 @@ namespace {{packageName}}.{{package}}
         [Obsolete]
         {{/isDeprecated}}
         Task<{{interfacePrefix}}{{operationId}}ApiResponse{{nrt?}}> {{operationId}}OrDefaultAsync({{>OperationSignature}});
-	
+        // DNV customization: Add wrap methods for only returning dto
         /// <summary>
         /// {{summary}}
         /// </summary>
@@ -136,6 +137,7 @@ namespace {{packageName}}.{{package}}
     /// </summary>
     {{>visibility}} interface {{interfacePrefix}}{{operationId}}ApiResponse : {{#lambda.joinWithComma}}{{packageName}}.{{clientPackage}}.{{interfacePrefix}}ApiResponse  {{#responses}}{{#dataType}}{{interfacePrefix}}{{vendorExtensions.x-http-status}}<{{#isModel}}{{^containerType}}{{packageName}}.{{modelPackage}}.{{/containerType}}{{/isModel}}{{{dataType}}}{{#nrt}}?{{/nrt}}{{^nrt}}{{#vendorExtensions.x-is-value-type}}?{{/vendorExtensions.x-is-value-type}}{{/nrt}}>  {{/dataType}}{{/responses}}{{/lambda.joinWithComma}}
     {
+        // DNV customization: 
         HttpRequestMessage Request { get; }
 
         HttpResponseMessage Response { get; }
@@ -199,6 +201,7 @@ namespace {{packageName}}.{{package}}
     {{/operations}}
 }
 
+// DNV customization: Separate interfaces for implementation
 namespace {{packageName}}
 {
     {{#operations}}
@@ -531,7 +534,7 @@ namespace {{packageName}}
                     {{/required}}
                     {{/headerParams}}
 
-                    // Add custom headers
+                    // DNV customization: Add custom headers
                     if (customHeaders != null)
                     {
                         foreach (var header in customHeaders)
@@ -694,6 +697,7 @@ namespace {{packageName}}
 
                     DateTime requestedAtLocalVar = DateTime.UtcNow;
 
+                    // DNV customization: Save request and response
                     string requestContentLocalVar = string.Empty;
                     if (httpRequestMessageLocalVar.Content != null)
                     {
