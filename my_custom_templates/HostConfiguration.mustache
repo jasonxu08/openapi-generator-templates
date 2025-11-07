@@ -86,7 +86,7 @@ namespace {{packageName}}.{{clientPackage}}
             _services.AddSingleton<{{classname}}Events>();
             _services.AddTransient<{{interfacePrefix}}{{classname}}, {{classname}}>();{{/apis}}{{/apiInfo}}
             // DNV customization: Inject client name.
-	    _services.AddTransient<{{interfacePrefix}}{{clientName}}, {{clientName}}>();
+            _services.AddTransient<{{interfacePrefix}}{{clientName}}, {{clientName}}>();
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace {{packageName}}.{{clientPackage}}
 
             {{#apiInfo}}{{#apis}}builders.Add(_services.AddHttpClient<{{interfacePrefix}}{{classname}}, {{classname}}>(client));
             {{/apis}}{{/apiInfo}}
-	    builders.Add(_services.AddHttpClient<{{interfacePrefix}}{{clientName}}, {{clientName}}>(client));
+            builders.Add(_services.AddHttpClient<{{interfacePrefix}}{{clientName}}, {{clientName}}>(client));
             if (builder != null)
                 foreach (IHttpClientBuilder instance in builders)
                     builder(instance);

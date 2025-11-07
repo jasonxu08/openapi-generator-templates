@@ -52,12 +52,51 @@ namespace {{packageName}}.{{clientPackage}}
     {
         {{>visibility}} HttpRequestMessage Request { get; }
         {{>visibility}} HttpResponseMessage Response { get; }
+        private readonly string _requestContent;
+        private readonly string _responseContent;
+        private readonly string _requestHeaders;
+        private readonly string _responseHeaders;
 
         {{>visibility}} HttpOperationException(HttpRequestMessage request, HttpResponseMessage response, string message)
             : base(message)
         {
             Request = request;
             Response = response;
+            // Capture content immediately to avoid disposed object issues
+            try
+            {
+                _requestContent = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult() ?? string.Empty;
+            }
+            catch
+            {
+                _requestContent = "[Unable to read request content]";
+            }
+
+            try
+            {
+                _responseContent = response.Content?.ReadAsStringAsync().GetAwaiter().GetResult() ?? string.Empty;
+            }
+            catch
+            {
+                _responseContent = "[Unable to read response content]";
+            }
+
+            _requestHeaders = request.Headers?.ToString() ?? string.Empty;
+            _responseHeaders = response.Headers?.ToString() ?? string.Empty;
+        }
+        /// <summary>
+        /// Returns a string representation of the exception including request and response details
+        /// </summary>
+        /// <returns></returns>
+        {{>visibility}} override string ToString()
+        {
+            return $"{base.ToString()}\n" +
+                $"Request: {Request.Method} {Request.RequestUri}\n" +
+                $"Request Headers: {_requestHeaders}\n" +
+                $"Request Content: {_requestContent}\n" +
+                $"Response Status: {(int)Response.StatusCode} {Response.ReasonPhrase}\n" +
+                $"Response Headers: {_responseHeaders}\n" +
+                $"Response Content: {_responseContent}";
         }
     }
 }
