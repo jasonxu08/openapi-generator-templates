@@ -460,12 +460,15 @@ namespace {{packageName}}
                     {{/required}}
                     // DNV customization: non-required parameters are of type Option
                     {{#isArray}}
-                    foreach (var item in {{paramName}}{{^required}}.Value{{/required}})
+                    if ({{paramName}}{{#required}} != null{{/required}}{{^required}}.IsSet{{/required}})
                     {
-                        var value = ClientUtils.ParameterToString(item);
-                        if (!string.IsNullOrEmpty(value))
+                        foreach (var item in {{paramName}}{{^required}}.Value{{/required}})
                         {
-                            parseQueryStringLocalVar["{{baseName}}"] = value;
+                            var value = ClientUtils.ParameterToString(item);
+                            if (!string.IsNullOrEmpty(value))
+                            {
+                                parseQueryStringLocalVar["{{baseName}}"] = value;
+                            }
                         }
                     }
                     {{/isArray}}
