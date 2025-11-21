@@ -14,7 +14,7 @@
     {{#enumVars}}
     {{#-first}}
     {{#isString}}
-    [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+    //[Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
     {{/isString}}
     {{/-first}}
     {{/enumVars}}
@@ -28,7 +28,7 @@
         /// </summary>
         {{#isString}}
         {{! EnumMember not currently supported in System.Text.Json, use a converter instead }}
-        [System.Runtime.Serialization.EnumMember(Value = "{{{value}}}")]
+        //[System.Runtime.Serialization.EnumMember(Value = "{{{value}}}")]
         {{/isString}}
         {{name}}{{^isString}} = {{{value}}}{{/isString}}{{#isString}}{{^vendorExtensions.x-zero-based-enum}} = {{-index}}{{/vendorExtensions.x-zero-based-enum}}{{/isString}}{{^-last}},{{/-last}}
         {{^-last}}
