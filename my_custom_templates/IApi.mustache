@@ -42,7 +42,7 @@ namespace {{packageName}}
 {{/apiInfo.apis}}
 
         public {{clientName}}(
-            HttpClient httpClient, bool dummy = true, JsonSerializerOptionsProvider? jsonSerializerOptionsProvider = null) 
+            HttpClient httpClient, {{#apiInfo.apis}}{{interfacePrefix}}{{classname}} {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}, {{/apiInfo.apis}}JsonSerializerOptionsProvider? jsonSerializerOptionsProvider = null) 
         {
             HttpClient = httpClient;
             if (jsonSerializerOptionsProvider != null)
@@ -73,9 +73,8 @@ namespace {{packageName}}
                 jsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
                 JsonSerializerOptionsProvider = new JsonSerializerOptionsProvider(jsonSerializerOptions);
             }
-            var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
 {{#apiInfo.apis}}
-            {{classname}} = new {{classname}}(loggerFactory.CreateLogger<{{classname}}>(), loggerFactory, httpClient, JsonSerializerOptionsProvider, new {{classname}}Events());
+            {{classname}} = {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}};
 {{/apiInfo.apis}}
         }
     }
