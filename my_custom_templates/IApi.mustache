@@ -2,7 +2,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Microsoft.Extensions.Logging;
 using {{packageName}}.{{clientPackage}};
 using {{packageName}}.{{apiPackage}};
 using {{packageName}}.{{modelPackage}};
@@ -45,6 +44,9 @@ namespace {{packageName}}
             HttpClient httpClient, {{#apiInfo.apis}}{{interfacePrefix}}{{classname}} {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}, {{/apiInfo.apis}}JsonSerializerOptionsProvider? jsonSerializerOptionsProvider = null) 
         {
             HttpClient = httpClient;
+{{#apiInfo.apis}}
+            {{classname}} = {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}};
+{{/apiInfo.apis}}
             if (jsonSerializerOptionsProvider != null)
             {
                 JsonSerializerOptionsProvider = jsonSerializerOptionsProvider;
@@ -73,9 +75,6 @@ namespace {{packageName}}
                 jsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver();
                 JsonSerializerOptionsProvider = new JsonSerializerOptionsProvider(jsonSerializerOptions);
             }
-{{#apiInfo.apis}}
-            {{classname}} = {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}};
-{{/apiInfo.apis}}
         }
     }
 }
