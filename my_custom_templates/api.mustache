@@ -469,7 +469,7 @@ namespace {{packageName}}
                             var value = ClientUtils.ParameterToString(item);
                             if (!string.IsNullOrEmpty(value))
                             {
-                                parseQueryStringLocalVar["{{baseName}}"] = value;
+                                parseQueryStringLocalVar.Add("{{baseName}}", value);
                             }
                         }
                     }
