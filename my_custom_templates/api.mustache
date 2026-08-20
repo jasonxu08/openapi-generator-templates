@@ -532,12 +532,30 @@ namespace {{packageName}}
                     {{/isFile}}
                     {{#isFile}}
                     {{#required}}
+                    {{#isArray}}
+                    foreach (var fileLocalVar in {{paramName}})
+                    {
+                        multipartContentLocalVar.Add(new StreamContent(fileLocalVar));
+                    }
+                    {{/isArray}}
+                    {{^isArray}}
                     multipartContentLocalVar.Add(new StreamContent({{paramName}}));
+                    {{/isArray}}
 
                     {{/required}}
                     {{^required}}
                     if ({{paramName}}.IsSet)
+                    {{#isArray}}
+                    {
+                        foreach (var fileLocalVar in {{paramName}}.Value)
+                        {
+                            multipartContentLocalVar.Add(new StreamContent(fileLocalVar));
+                        }
+                    }
+                    {{/isArray}}
+                    {{^isArray}}
                         multipartContentLocalVar.Add(new StreamContent({{paramName}}.Value));
+                    {{/isArray}}
 
                     {{/required}}
                     {{/isFile}}
