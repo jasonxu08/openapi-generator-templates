@@ -538,8 +538,9 @@
             {{^isMap}}
             {{^isNumeric}}
             {{#isInnerEnum}}
+            {{#required}}
             {{#isNullable}}
-            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}{{^required}}Option.Value{{#vendorExtensions.x-is-value-type}}{{nrt!}}.Value{{/vendorExtensions.x-is-value-type}}{{/required}}{{#required}}{{#isNullable}}{{nrt!}}.Value{{/isNullable}}{{/required}});
+            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}{{nrt!}}.Value);
             if ({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue != null)
                 writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
             else
@@ -547,9 +548,31 @@
 
             {{/isNullable}}
             {{^isNullable}}
-            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}{{^required}}Option.Value{{#vendorExtensions.x-is-value-type}}{{nrt!}}.Value{{/vendorExtensions.x-is-value-type}}{{/required}}{{#required}}{{#isNullable}}{{nrt!}}.Value{{/isNullable}}{{/required}});
+            var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}});
             writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
             {{/isNullable}}
+            {{/required}}
+            {{^required}}
+            if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.IsSet)
+                {{#isNullable}}
+                if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value != null)
+                {
+                    var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value{{#vendorExtensions.x-is-value-type}}{{nrt!}}.Value{{/vendorExtensions.x-is-value-type}});
+                    if ({{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue != null)
+                        writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
+                    else
+                        writer.WriteNull("{{baseName}}");
+                }
+                else
+                    writer.WriteNull("{{baseName}}");
+                {{/isNullable}}
+                {{^isNullable}}
+            {
+                var {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue = {{classname}}.{{{datatypeWithEnum}}}ToJsonValue({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value{{#vendorExtensions.x-is-value-type}}{{nrt!}}.Value{{/vendorExtensions.x-is-value-type}});
+                writer.WriteString("{{baseName}}", {{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}RawValue);
+            }
+                {{/isNullable}}
+            {{/required}}
             {{/isInnerEnum}}
             {{^isInnerEnum}}
             {{#lambda.copyText}}{{#lambda.camelcase_sanitize_param}}{{name}}{{/lambda.camelcase_sanitize_param}}{{/lambda.copyText}}
