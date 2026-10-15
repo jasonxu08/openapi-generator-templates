@@ -408,5 +408,80 @@ using System.Runtime.CompilerServices;
         /// The format to use for DateTime serialization
         /// </summary>
         public const string ISO8601_DATETIME_FORMAT = "o";
+
+        /// <summary>
+        /// Returns the multipart file name carried by a <see cref="NamedFileStream"/>, otherwise the supplied default.
+        /// </summary>
+        public static string GetMultipartFileName(Stream{{nrt?}} stream, string defaultFileName)
+            => stream is NamedFileStream namedFileStreamLocalVar ? namedFileStreamLocalVar.FileName : defaultFileName;
+    }
+
+    /// <summary>
+    /// A <see cref="Stream"/> wrapper that additionally carries the file name to send in a
+    /// multipart/form-data 'filename' attribute. File upload operations read it so a caller can
+    /// stream content while still controlling the Content-Disposition file name the server validates.
+    /// </summary>
+    {{>visibility}} sealed class NamedFileStream : Stream
+    {
+        private readonly Stream _innerStreamLocalVar;
+
+        /// <summary>
+        /// Wraps <paramref name="innerStream"/> and tags it with the multipart <paramref name="fileName"/>.
+        /// </summary>
+        public NamedFileStream(Stream innerStream, string fileName)
+        {
+            _innerStreamLocalVar = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
+            FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
+        }
+
+        /// <summary>
+        /// The file name to send in the multipart Content-Disposition for this stream.
+        /// </summary>
+        public string FileName { get; }
+
+        /// <inheritdoc/>
+        public override bool CanRead => _innerStreamLocalVar.CanRead;
+
+        /// <inheritdoc/>
+        public override bool CanSeek => _innerStreamLocalVar.CanSeek;
+
+        /// <inheritdoc/>
+        public override bool CanWrite => _innerStreamLocalVar.CanWrite;
+
+        /// <inheritdoc/>
+        public override long Length => _innerStreamLocalVar.Length;
+
+        /// <inheritdoc/>
+        public override long Position { get => _innerStreamLocalVar.Position; set => _innerStreamLocalVar.Position = value; }
+
+        /// <inheritdoc/>
+        public override void Flush() => _innerStreamLocalVar.Flush();
+
+        /// <inheritdoc/>
+        public override int Read(byte[] buffer, int offset, int count) => _innerStreamLocalVar.Read(buffer, offset, count);
+
+        /// <inheritdoc/>
+        public override long Seek(long offset, SeekOrigin origin) => _innerStreamLocalVar.Seek(offset, origin);
+
+        /// <inheritdoc/>
+        public override void SetLength(long value) => _innerStreamLocalVar.SetLength(value);
+
+        /// <inheritdoc/>
+        public override void Write(byte[] buffer, int offset, int count) => _innerStreamLocalVar.Write(buffer, offset, count);
+
+        /// <inheritdoc/>
+        public override System.Threading.Tasks.Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken) => _innerStreamLocalVar.ReadAsync(buffer, offset, count, cancellationToken);
+
+        /// <inheritdoc/>
+        public override System.Threading.Tasks.Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken) => _innerStreamLocalVar.WriteAsync(buffer, offset, count, cancellationToken);
+
+        /// <inheritdoc/>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                _innerStreamLocalVar.Dispose();
+
+            base.Dispose(disposing);
+        }
     }
 }
