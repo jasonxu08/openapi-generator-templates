@@ -485,7 +485,7 @@ using System.Runtime.CompilerServices;
                     content.Add(CreateMultipartTextPart(valueLocalVar, declaredContentType), name);
             }
             else
-                content.Add(CreateMultipartJsonPart(JsonSerializer.Serialize(value, value.GetType(), jsonSerializerOptions), declaredContentType), name);
+                content.Add(CreateMultipartJsonPart(SerializeToJson(value, jsonSerializerOptions), declaredContentType), name);
         }
 
         /// <summary>
@@ -507,8 +507,20 @@ using System.Runtime.CompilerServices;
                     fields.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>(name, valueLocalVar));
             }
             else
-                fields.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>(name, JsonSerializer.Serialize(value, value.GetType(), jsonSerializerOptions)));
+                fields.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>(name, SerializeToJson(value, jsonSerializerOptions)));
         }
+
+        /// <summary>
+        /// Serializes a value by its run-time type. Uses the metadata overload (<c>JsonTypeInfo</c>) of <c>System.Text.Json</c>, which - unlike the
+        /// <c>Serialize(object, Type, options)</c> overload - does not add trim / AOT analyzer warnings (IL2026, IL3050) to every generated client.
+        /// </summary>
+        private static string SerializeToJson(object value, JsonSerializerOptions jsonSerializerOptions)
+        {{#net80OrLater}}
+            => JsonSerializer.Serialize(value, jsonSerializerOptions.GetTypeInfo(value.GetType()));
+        {{/net80OrLater}}
+        {{^net80OrLater}}
+            => JsonSerializer.Serialize(value, value.GetType(), jsonSerializerOptions);
+        {{/net80OrLater}}
 
         /// <summary>
         /// Creates a multipart text part: <c>text/plain; charset=utf-8</c> unless the swagger <c>encoding</c> declares another media type.
