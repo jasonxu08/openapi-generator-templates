@@ -489,6 +489,28 @@ using System.Runtime.CompilerServices;
         }
 
         /// <summary>
+        /// Adds a form field to the pairs of an <c>application/x-www-form-urlencoded</c> body with the same rules as <see cref="AddMultipartFormField"/>:
+        /// a primitive is one pair, a collection of primitives one pair per item (the name is repeated), anything else is sent as its JSON text.
+        /// </summary>
+        /// <param name="fields">The name / value pairs of the body.</param>
+        /// <param name="name">The name of the form field.</param>
+        /// <param name="value">The value; nothing is added for <c>null</c>.</param>
+        /// <param name="jsonSerializerOptions">The options used for JSON values.</param>
+        public static void AddFormUrlEncodedField(List<KeyValuePair<string{{nrt?}}, string{{nrt?}}>> fields, string name, object{{nrt?}} value, JsonSerializerOptions jsonSerializerOptions)
+        {
+            if (value == null)
+                return;
+
+            if (TryGetFormFieldValues(value, out List<string> valuesLocalVar))
+            {
+                foreach (string valueLocalVar in valuesLocalVar)
+                    fields.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>(name, valueLocalVar));
+            }
+            else
+                fields.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>(name, JsonSerializer.Serialize(value, value.GetType(), jsonSerializerOptions)));
+        }
+
+        /// <summary>
         /// Creates a multipart text part: <c>text/plain; charset=utf-8</c> unless the swagger <c>encoding</c> declares another media type.
         /// </summary>
         /// <param name="value">The text.</param>
