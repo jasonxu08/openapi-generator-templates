@@ -515,28 +515,35 @@ namespace {{packageName}}
                     {{#-first}}
                     MultipartFormDataContent multipartContentLocalVar = new MultipartFormDataContent();
 
-                    httpRequestMessageLocalVar.Content = multipartContentLocalVar;{{/-first}}{{^isFile}}{{#required}}
+                    httpRequestMessageLocalVar.Content = multipartContentLocalVar;
 
-                    {{! DNV customization: complex (non-primitive) parts are serialized as JSON; scalars stay as plain named text parts }}
-                    {{#isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(ClientUtils.ParameterToString({{paramName}})), "{{baseName}}");{{/isPrimitiveType}}{{^isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(JsonSerializer.Serialize({{paramName}}, _jsonSerializerOptions), System.Text.Encoding.UTF8, "application/json"), "{{baseName}}");{{/isPrimitiveType}}
+                    {{/-first}}
+                    {{/formParams}}
+                    {{! DNV customization: the non-file fields are added first and the files last, whatever the required flags are (metadata before content, as forward-only servers expect) }}
+                    {{#formParams}}
+                    {{^isFile}}
+                    {{#required}}
+                    ClientUtils.AddMultipartFormField(multipartContentLocalVar, "{{baseName}}", {{paramName}}, _jsonSerializerOptions{{#contentType}}, "{{{.}}}"{{/contentType}});
 
                     {{/required}}
                     {{^required}}
                     if ({{paramName}}.IsSet)
-                        {{#isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(ClientUtils.ParameterToString({{paramName}}.Value)), "{{baseName}}");{{/isPrimitiveType}}{{^isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(JsonSerializer.Serialize({{paramName}}.Value, _jsonSerializerOptions), System.Text.Encoding.UTF8, "application/json"), "{{baseName}}");{{/isPrimitiveType}}
+                        ClientUtils.AddMultipartFormField(multipartContentLocalVar, "{{baseName}}", {{paramName}}.Value, _jsonSerializerOptions{{#contentType}}, "{{{.}}}"{{/contentType}});
 
                     {{/required}}
                     {{/isFile}}
+                    {{/formParams}}
+                    {{#formParams}}
                     {{#isFile}}
                     {{#required}}
                     {{#isArray}}
                     foreach (var fileLocalVar in {{paramName}})
                     {
-                        multipartContentLocalVar.Add(new StreamContent(fileLocalVar), "{{baseName}}", ClientUtils.GetMultipartFileName(fileLocalVar, "{{baseName}}"));
+                        ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", fileLocalVar{{#contentType}}, "{{{.}}}"{{/contentType}});
                     }
                     {{/isArray}}
                     {{^isArray}}
-                    multipartContentLocalVar.Add(new StreamContent({{paramName}}), "{{baseName}}", ClientUtils.GetMultipartFileName({{paramName}}, "{{baseName}}"));
+                    ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", {{paramName}}{{#contentType}}, "{{{.}}}"{{/contentType}});
                     {{/isArray}}
 
                     {{/required}}
@@ -546,12 +553,12 @@ namespace {{packageName}}
                     {
                         foreach (var fileLocalVar in {{paramName}}.Value)
                         {
-                            multipartContentLocalVar.Add(new StreamContent(fileLocalVar), "{{baseName}}", ClientUtils.GetMultipartFileName(fileLocalVar, "{{baseName}}"));
+                            ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", fileLocalVar{{#contentType}}, "{{{.}}}"{{/contentType}});
                         }
                     }
                     {{/isArray}}
                     {{^isArray}}
-                        multipartContentLocalVar.Add(new StreamContent({{paramName}}.Value), "{{baseName}}", ClientUtils.GetMultipartFileName({{paramName}}.Value, "{{baseName}}"));
+                        ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", {{paramName}}.Value{{#contentType}}, "{{{.}}}"{{/contentType}});
                     {{/isArray}}
 
                     {{/required}}

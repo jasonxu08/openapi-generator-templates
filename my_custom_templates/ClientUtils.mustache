@@ -8,6 +8,8 @@ using System.IO;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;{{#useCompareNetObjects}}
@@ -428,6 +430,151 @@ using System.Runtime.CompilerServices;
 
             return defaultFileName;
         }
+
+        /// <summary>
+        /// Adds a file to a multipart/form-data body as a named part that carries a file name (see <see cref="GetMultipartFileName"/>).
+        /// </summary>
+        /// <param name="content">The multipart body.</param>
+        /// <param name="name">The name of the form field.</param>
+        /// <param name="stream">The file content.</param>
+        /// <param name="declaredContentType">The media type declared in the swagger <c>encoding</c> of the field, if any.</param>
+        public static void AddMultipartFile(MultipartFormDataContent content, string name, Stream stream, string{{nrt?}} declaredContentType = null)
+            => content.Add(CreateMultipartFilePart(stream, declaredContentType), name, GetMultipartFileName(stream, name));
+
+        /// <summary>
+        /// Creates the content of a multipart file part. The part gets a Content-Type when the stream is a <see cref="NamedFileStream"/> that carries one or,
+        /// otherwise, when the swagger declares one (<c>encoding.&lt;field&gt;.contentType</c>); without either no Content-Type is sent for the part.
+        /// </summary>
+        /// <param name="stream">The file content.</param>
+        /// <param name="declaredContentType">The media type declared in the swagger <c>encoding</c> of the field, if any.</param>
+        public static StreamContent CreateMultipartFilePart(Stream stream, string{{nrt?}} declaredContentType = null)
+        {
+            StreamContent partLocalVar = new StreamContent(stream);
+            string{{nrt?}} contentTypeLocalVar = stream is NamedFileStream namedFileStreamLocalVar && namedFileStreamLocalVar.ContentType != null
+                ? namedFileStreamLocalVar.ContentType
+                : declaredContentType;
+            MediaTypeHeaderValue{{nrt?}} mediaTypeLocalVar = ParseConcreteMediaType(contentTypeLocalVar);
+            if (mediaTypeLocalVar != null)
+                partLocalVar.Headers.ContentType = mediaTypeLocalVar;
+
+            return partLocalVar;
+        }
+
+        /// <summary>
+        /// Adds a non-file form field to a multipart/form-data body. A primitive (string, number, bool, date, Guid, enum, a byte array as base64) becomes one named
+        /// text part, a collection of primitives one named text part per item (the name is repeated), anything else (model, dictionary, collection of models)
+        /// one named JSON part. A JSON media type declared in the swagger <c>encoding</c> forces one JSON part; any other declared media type becomes the
+        /// Content-Type of the text parts.
+        /// </summary>
+        /// <param name="content">The multipart body.</param>
+        /// <param name="name">The name of the form field.</param>
+        /// <param name="value">The value; nothing is added for <c>null</c>.</param>
+        /// <param name="jsonSerializerOptions">The options used for JSON parts.</param>
+        /// <param name="declaredContentType">The media type declared in the swagger <c>encoding</c> of the field, if any.</param>
+        public static void AddMultipartFormField(MultipartFormDataContent content, string name, object{{nrt?}} value, JsonSerializerOptions jsonSerializerOptions, string{{nrt?}} declaredContentType = null)
+        {
+            if (value == null)
+                return;
+
+            MediaTypeHeaderValue{{nrt?}} declaredMediaTypeLocalVar = ParseConcreteMediaType(declaredContentType);
+            bool declaredAsJsonLocalVar = declaredMediaTypeLocalVar != null && IsJsonMime(declaredMediaTypeLocalVar.MediaType{{nrt!}});
+
+            if (!declaredAsJsonLocalVar && TryGetFormFieldValues(value, out List<string> valuesLocalVar))
+            {
+                foreach (string valueLocalVar in valuesLocalVar)
+                    content.Add(CreateMultipartTextPart(valueLocalVar, declaredContentType), name);
+            }
+            else
+                content.Add(CreateMultipartJsonPart(JsonSerializer.Serialize(value, value.GetType(), jsonSerializerOptions), declaredContentType), name);
+        }
+
+        /// <summary>
+        /// Creates a multipart text part: <c>text/plain; charset=utf-8</c> unless the swagger <c>encoding</c> declares another media type.
+        /// </summary>
+        /// <param name="value">The text.</param>
+        /// <param name="declaredContentType">The media type declared in the swagger <c>encoding</c> of the field, if any.</param>
+        public static StringContent CreateMultipartTextPart(string value, string{{nrt?}} declaredContentType = null)
+        {
+            MediaTypeHeaderValue{{nrt?}} mediaTypeLocalVar = ParseConcreteMediaType(declaredContentType);
+            return mediaTypeLocalVar == null
+                ? new StringContent(value, Encoding.UTF8)
+                : new StringContent(value, Encoding.UTF8, mediaTypeLocalVar.MediaType{{nrt!}});
+        }
+
+        /// <summary>
+        /// Creates a multipart JSON part: <c>application/json; charset=utf-8</c>, or the JSON media type that the swagger <c>encoding</c> declares.
+        /// </summary>
+        /// <param name="json">The JSON text.</param>
+        /// <param name="declaredContentType">The media type declared in the swagger <c>encoding</c> of the field, if any.</param>
+        public static StringContent CreateMultipartJsonPart(string json, string{{nrt?}} declaredContentType = null)
+        {
+            MediaTypeHeaderValue{{nrt?}} mediaTypeLocalVar = ParseConcreteMediaType(declaredContentType);
+            string mediaTypeNameLocalVar = mediaTypeLocalVar != null && IsJsonMime(mediaTypeLocalVar.MediaType{{nrt!}})
+                ? mediaTypeLocalVar.MediaType{{nrt!}}
+                : "application/json";
+            return new StringContent(json, Encoding.UTF8, mediaTypeNameLocalVar);
+        }
+
+        /// <summary>
+        /// Parses a media type that can be sent as a Content-Type; wildcards ("image/*") and lists ("image/png, image/jpeg"), which the swagger
+        /// <c>encoding</c> allows, cannot and yield <c>null</c>, as does a malformed value.
+        /// </summary>
+        private static MediaTypeHeaderValue{{nrt?}} ParseConcreteMediaType(string{{nrt?}} mediaType)
+        {
+            if (string.IsNullOrWhiteSpace(mediaType) || mediaType.IndexOf('*') >= 0 || mediaType.IndexOf(',') >= 0)
+                return null;
+
+            try
+            {
+                return MediaTypeHeaderValue.Parse(mediaType);
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The text values of a form field: one for a primitive, one per item for a collection of primitives (null items are skipped).
+        /// Returns <c>false</c> for anything else (model, dictionary, collection of models), which is sent as JSON.
+        /// </summary>
+        private static bool TryGetFormFieldValues(object value, out List<string> values)
+        {
+            values = new List<string>();
+            if (IsSimpleFormValue(value))
+            {
+                values.Add(FormValueToString(value));
+                return true;
+            }
+
+            if (value is IEnumerable enumerableLocalVar && value is not IDictionary)
+            {
+                foreach (object{{nrt?}} itemLocalVar in enumerableLocalVar)
+                {
+                    if (itemLocalVar == null)
+                        continue;
+
+                    if (!IsSimpleFormValue(itemLocalVar))
+                        return false;
+
+                    values.Add(FormValueToString(itemLocalVar));
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsSimpleFormValue(object value)
+        {
+            Type typeLocalVar = value.GetType();
+            return typeLocalVar.IsPrimitive || typeLocalVar.IsEnum || value is string || value is decimal || value is Guid || value is DateTime
+                || value is DateTimeOffset || value is TimeSpan || value is Uri || value is byte[]{{#net60OrLater}} || value is DateOnly || value is TimeOnly{{/net60OrLater}};
+        }
+
+        private static string FormValueToString(object value)
+            => value is byte[] bytesLocalVar ? Convert.ToBase64String(bytesLocalVar) : ParameterToString(value) ?? string.Empty;
     }
 
     /// <summary>
@@ -443,15 +590,30 @@ using System.Runtime.CompilerServices;
         /// Wraps <paramref name="innerStream"/> and tags it with the multipart <paramref name="fileName"/>.
         /// </summary>
         public NamedFileStream(Stream innerStream, string fileName)
+            : this(innerStream, fileName, null)
+        {
+        }
+
+        /// <summary>
+        /// Wraps <paramref name="innerStream"/> and tags it with the multipart <paramref name="fileName"/> and <paramref name="contentType"/>
+        /// (for example <c>text/csv</c>), which servers may validate besides the file name.
+        /// </summary>
+        public NamedFileStream(Stream innerStream, string fileName, string{{nrt?}} contentType)
         {
             _innerStreamLocalVar = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
             FileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
+            ContentType = contentType;
         }
 
         /// <summary>
         /// The file name to send in the multipart Content-Disposition for this stream.
         /// </summary>
         public string FileName { get; }
+
+        /// <summary>
+        /// The Content-Type to send for the multipart part of this stream, if any; it wins over the media type declared in the swagger.
+        /// </summary>
+        public string{{nrt?}} ContentType { get; }
 
         /// <inheritdoc/>
         public override bool CanRead => _innerStreamLocalVar.CanRead;
