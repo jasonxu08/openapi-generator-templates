@@ -410,10 +410,24 @@ using System.Runtime.CompilerServices;
         public const string ISO8601_DATETIME_FORMAT = "o";
 
         /// <summary>
-        /// Returns the multipart file name carried by a <see cref="NamedFileStream"/>, otherwise the supplied default.
+        /// Returns the multipart file name of a stream: the name carried by a <see cref="NamedFileStream"/>, the name of the file a
+        /// <see cref="FileStream"/> was opened on, otherwise the supplied default.
         /// </summary>
         public static string GetMultipartFileName(Stream{{nrt?}} stream, string defaultFileName)
-            => stream is NamedFileStream namedFileStreamLocalVar ? namedFileStreamLocalVar.FileName : defaultFileName;
+        {
+            if (stream is NamedFileStream namedFileStreamLocalVar)
+                return namedFileStreamLocalVar.FileName;
+
+            if (stream is FileStream fileStreamLocalVar)
+            {
+                // DNV customization: a FileStream knows the file it was opened on ("[Unknown]" is reported when it was created from a handle)
+                string fileNameLocalVar = Path.GetFileName(fileStreamLocalVar.Name);
+                if (!string.IsNullOrEmpty(fileNameLocalVar) && fileNameLocalVar != "[Unknown]")
+                    return fileNameLocalVar;
+            }
+
+            return defaultFileName;
+        }
     }
 
     /// <summary>
