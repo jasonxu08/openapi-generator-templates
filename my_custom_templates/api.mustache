@@ -513,30 +513,54 @@ namespace {{packageName}}
                     {{/headerParams}}
                     {{#formParams}}
                     {{#-first}}
+                    {{#isMultipart}}
                     MultipartFormDataContent multipartContentLocalVar = new MultipartFormDataContent();
 
-                    httpRequestMessageLocalVar.Content = multipartContentLocalVar;{{/-first}}{{^isFile}}{{#required}}
+                    httpRequestMessageLocalVar.Content = multipartContentLocalVar;
 
-                    {{! DNV customization: complex (non-primitive) parts are serialized as JSON; scalars stay as plain named text parts }}
-                    {{#isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(ClientUtils.ParameterToString({{paramName}})), "{{baseName}}");{{/isPrimitiveType}}{{^isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(JsonSerializer.Serialize({{paramName}}, _jsonSerializerOptions), System.Text.Encoding.UTF8, "application/json"), "{{baseName}}");{{/isPrimitiveType}}
+                    {{/isMultipart}}
+                    {{^isMultipart}}
+                    List<KeyValuePair<string{{nrt?}}, string{{nrt?}}>> formParameterLocalVars = new List<KeyValuePair<string{{nrt?}}, string{{nrt?}}>>();
+
+                    {{/isMultipart}}
+                    {{/-first}}
+                    {{/formParams}}
+                    {{! DNV customization: the non-file fields are added first and the files last, whatever the required flags are (metadata before content, as forward-only servers expect) }}
+                    {{#formParams}}
+                    {{^isFile}}
+                    {{#required}}
+                    {{#isMultipart}}
+                    ClientUtils.AddMultipartFormField(multipartContentLocalVar, "{{baseName}}", {{paramName}}, _jsonSerializerOptions{{#contentType}}, "{{{.}}}"{{/contentType}});
+                    {{/isMultipart}}
+                    {{^isMultipart}}
+                    ClientUtils.AddFormUrlEncodedField(formParameterLocalVars, "{{baseName}}", {{paramName}}, _jsonSerializerOptions);
+                    {{/isMultipart}}
 
                     {{/required}}
                     {{^required}}
                     if ({{paramName}}.IsSet)
-                        {{#isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(ClientUtils.ParameterToString({{paramName}}.Value)), "{{baseName}}");{{/isPrimitiveType}}{{^isPrimitiveType}}multipartContentLocalVar.Add(new StringContent(JsonSerializer.Serialize({{paramName}}.Value, _jsonSerializerOptions), System.Text.Encoding.UTF8, "application/json"), "{{baseName}}");{{/isPrimitiveType}}
+                    {{#isMultipart}}
+                        ClientUtils.AddMultipartFormField(multipartContentLocalVar, "{{baseName}}", {{paramName}}.Value, _jsonSerializerOptions{{#contentType}}, "{{{.}}}"{{/contentType}});
+                    {{/isMultipart}}
+                    {{^isMultipart}}
+                        ClientUtils.AddFormUrlEncodedField(formParameterLocalVars, "{{baseName}}", {{paramName}}.Value, _jsonSerializerOptions);
+                    {{/isMultipart}}
 
                     {{/required}}
                     {{/isFile}}
+                    {{/formParams}}
+                    {{#isMultipart}}
+                    {{#formParams}}
                     {{#isFile}}
                     {{#required}}
                     {{#isArray}}
                     foreach (var fileLocalVar in {{paramName}})
                     {
-                        multipartContentLocalVar.Add(new StreamContent(fileLocalVar), "{{baseName}}", ClientUtils.GetMultipartFileName(fileLocalVar, "{{baseName}}"));
+                        ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", fileLocalVar{{#contentType}}, "{{{.}}}"{{/contentType}});
                     }
                     {{/isArray}}
                     {{^isArray}}
-                    multipartContentLocalVar.Add(new StreamContent({{paramName}}), "{{baseName}}", ClientUtils.GetMultipartFileName({{paramName}}, "{{baseName}}"));
+                    ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", {{paramName}}{{#contentType}}, "{{{.}}}"{{/contentType}});
                     {{/isArray}}
 
                     {{/required}}
@@ -546,17 +570,26 @@ namespace {{packageName}}
                     {
                         foreach (var fileLocalVar in {{paramName}}.Value)
                         {
-                            multipartContentLocalVar.Add(new StreamContent(fileLocalVar), "{{baseName}}", ClientUtils.GetMultipartFileName(fileLocalVar, "{{baseName}}"));
+                            ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", fileLocalVar{{#contentType}}, "{{{.}}}"{{/contentType}});
                         }
                     }
                     {{/isArray}}
                     {{^isArray}}
-                        multipartContentLocalVar.Add(new StreamContent({{paramName}}.Value), "{{baseName}}", ClientUtils.GetMultipartFileName({{paramName}}.Value, "{{baseName}}"));
+                        ClientUtils.AddMultipartFile(multipartContentLocalVar, "{{baseName}}", {{paramName}}.Value{{#contentType}}, "{{{.}}}"{{/contentType}});
                     {{/isArray}}
 
                     {{/required}}
                     {{/isFile}}
                     {{/formParams}}
+                    {{/isMultipart}}
+                    {{^isMultipart}}
+                    {{#formParams}}
+                    {{#-last}}
+                    httpRequestMessageLocalVar.Content = new FormUrlEncodedContent(formParameterLocalVars);
+
+                    {{/-last}}
+                    {{/formParams}}
+                    {{/isMultipart}}
                     {{#bodyParam}}
                     {{#required}}
                     httpRequestMessageLocalVar.Content = ({{paramName}}{{^required}}.Value{{/required}} as object) is System.IO.Stream stream
@@ -682,13 +715,9 @@ namespace {{packageName}}
                     DateTime requestedAtLocalVar = DateTime.UtcNow;
 
                     // DNV customization: Save request and response
-                    // Only capture/rewrap non-multipart bodies; a multipart body must keep its boundary framing and file parts
-                    string requestContentLocalVar = string.Empty;
-                    if (httpRequestMessageLocalVar.Content != null && httpRequestMessageLocalVar.Content is not MultipartContent)
-                    {
-                        requestContentLocalVar = await httpRequestMessageLocalVar.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        httpRequestMessageLocalVar.Content = new StringContent(requestContentLocalVar, System.Text.Encoding.UTF8, "application/json");
-                    }
+                    // Only bodies that are buffered in memory are read: a multipart body keeps its boundary framing and file parts (it is described for the diagnostics instead)
+                    // and a binary body is sent untouched
+                    string requestContentLocalVar = await ClientUtils.CaptureRequestContentAsync(httpRequestMessageLocalVar, {{#consumes}}{{#-first}}contentTypeLocalVar{{/-first}}{{/consumes}}{{^consumes}}null{{/consumes}}).ConfigureAwait(false);
                     using (HttpResponseMessage httpResponseMessageLocalVar = await HttpClient.SendAsync(httpRequestMessageLocalVar, cancellationToken).ConfigureAwait(false))
                     {
                         string responseContentLocalVar = string.Empty;
