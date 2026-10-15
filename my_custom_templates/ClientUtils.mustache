@@ -597,6 +597,74 @@ using System.Runtime.CompilerServices;
 
         private static string FormValueToString(object value)
             => value is byte[] bytesLocalVar ? Convert.ToBase64String(bytesLocalVar) : ParameterToString(value) ?? string.Empty;
+
+        /// <summary>
+        /// DNV customization (request capture): returns the text of the request body for <c>HttpOperationException.Request.Content</c> and makes sure that the
+        /// request is still sent unchanged. Only bodies that are already buffered in memory are read: a string body is read and re-created (so that it can be
+        /// sent after it was read) with the selected request media type, a url-encoded form body is read; a multipart body is described
+        /// (see <see cref="DescribeMultipartContentAsync"/>) because reading it would consume the file streams and lose its boundary framing; any other
+        /// body, for example a binary stream, is neither read nor changed and therefore not part of the diagnostics.
+        /// </summary>
+        /// <param name="request">The request that is about to be sent.</param>
+        /// <param name="contentType">The selected request media type (<c>consumes</c>), used for a re-created string body; <c>application/json</c> when unknown.</param>
+        public static async System.Threading.Tasks.Task<string> CaptureRequestContentAsync(HttpRequestMessage request, string{{nrt?}} contentType)
+        {
+            HttpContent{{nrt?}} contentLocalVar = request.Content;
+            if (contentLocalVar is MultipartContent multipartContentLocalVar)
+                return await DescribeMultipartContentAsync(multipartContentLocalVar).ConfigureAwait(false);
+
+            if (contentLocalVar is StringContent)
+            {
+                string textLocalVar = await contentLocalVar.ReadAsStringAsync().ConfigureAwait(false);
+                MediaTypeHeaderValue{{nrt?}} mediaTypeLocalVar = ParseConcreteMediaType(contentType);
+                request.Content = new StringContent(textLocalVar, Encoding.UTF8, mediaTypeLocalVar != null ? mediaTypeLocalVar.MediaType{{nrt!}} : "application/json");
+                return textLocalVar;
+            }
+
+            if (contentLocalVar is FormUrlEncodedContent)
+                return await contentLocalVar.ReadAsStringAsync().ConfigureAwait(false);
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Describes a multipart request body for diagnostics without reading any stream: the media type, then one line per part with its name, file name,
+        /// Content-Type and length; the value of a text part is included (up to 1,000 characters).
+        /// </summary>
+        /// <param name="content">The multipart body.</param>
+        public static async System.Threading.Tasks.Task<string> DescribeMultipartContentAsync(MultipartContent content)
+        {
+            StringBuilder builderLocalVar = new StringBuilder();
+            builderLocalVar.Append(content.Headers.ContentType?.MediaType);
+            foreach (HttpContent partLocalVar in content)
+            {
+                ContentDispositionHeaderValue{{nrt?}} dispositionLocalVar = partLocalVar.Headers.ContentDisposition;
+                string partNameLocalVar = dispositionLocalVar?.Name?.Trim('"') ?? string.Empty;
+                string{{nrt?}} fileNameLocalVar = (dispositionLocalVar?.FileNameStar ?? dispositionLocalVar?.FileName)?.Trim('"');
+
+                List<string> detailsLocalVar = new List<string>();
+                if (fileNameLocalVar != null)
+                    detailsLocalVar.Add("filename=" + fileNameLocalVar);
+
+                if (partLocalVar.Headers.ContentType != null)
+                    detailsLocalVar.Add(partLocalVar.Headers.ContentType.ToString());
+
+                long? lengthLocalVar = partLocalVar.Headers.ContentLength;
+                if (lengthLocalVar.HasValue)
+                    detailsLocalVar.Add(lengthLocalVar.Value + " bytes");
+
+                builderLocalVar.Append('\n').Append("part '").Append(partNameLocalVar).Append("' [").Append(string.Join(", ", detailsLocalVar)).Append(']');
+
+                // only text parts are buffered in memory; a file stream is never read here
+                if (fileNameLocalVar == null && partLocalVar is StringContent)
+                {
+                    string textLocalVar = (await partLocalVar.ReadAsStringAsync().ConfigureAwait(false)).Replace("\r", " ").Replace("\n", " ");
+                    builderLocalVar.Append(": ").Append(textLocalVar.Length > 1000 ? textLocalVar.Substring(0, 1000) + "..." : textLocalVar);
+                }
+            }
+
+            return builderLocalVar.ToString();
+        }
     }
 
     /// <summary>

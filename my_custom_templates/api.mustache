@@ -715,13 +715,9 @@ namespace {{packageName}}
                     DateTime requestedAtLocalVar = DateTime.UtcNow;
 
                     // DNV customization: Save request and response
-                    // Only capture/rewrap non-multipart bodies; a multipart body must keep its boundary framing and file parts
-                    string requestContentLocalVar = string.Empty;
-                    if (httpRequestMessageLocalVar.Content != null && httpRequestMessageLocalVar.Content is not MultipartContent && httpRequestMessageLocalVar.Content is not FormUrlEncodedContent)
-                    {
-                        requestContentLocalVar = await httpRequestMessageLocalVar.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        httpRequestMessageLocalVar.Content = new StringContent(requestContentLocalVar, System.Text.Encoding.UTF8, "application/json");
-                    }
+                    // Only bodies that are buffered in memory are read: a multipart body keeps its boundary framing and file parts (it is described for the diagnostics instead)
+                    // and a binary body is sent untouched
+                    string requestContentLocalVar = await ClientUtils.CaptureRequestContentAsync(httpRequestMessageLocalVar, {{#consumes}}{{#-first}}contentTypeLocalVar{{/-first}}{{/consumes}}{{^consumes}}null{{/consumes}}).ConfigureAwait(false);
                     using (HttpResponseMessage httpResponseMessageLocalVar = await HttpClient.SendAsync(httpRequestMessageLocalVar, cancellationToken).ConfigureAwait(false))
                     {
                         string responseContentLocalVar = string.Empty;
